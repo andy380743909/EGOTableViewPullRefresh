@@ -37,6 +37,7 @@
 
 @implementation EGORefreshTableHeaderView
 
+@synthesize oldScrollViewContentInset;
 @synthesize delegate=_delegate;
 
 
@@ -175,17 +176,30 @@
 	_state = aState;
 }
 
+- (void)storeOldContentInsetForScrollView:(UIScrollView *)scrollView{
+    
+    if (!self.oldScrollViewContentInset) {
+        self.oldScrollViewContentInset = [NSValue valueWithUIEdgeInsets:scrollView.contentInset];
+    }
+    
+}
+
+- (UIEdgeInsets)oldContentInset{
+    return [self.oldScrollViewContentInset UIEdgeInsetsValue];
+}
 
 #pragma mark -
 #pragma mark ScrollView Methods
 
 - (void)egoRefreshScrollViewDidScroll:(UIScrollView *)scrollView {	
-	
+    [self storeOldContentInsetForScrollView:scrollView];
 	if (_state == EGOOPullRefreshLoading) {
 		
 		CGFloat offset = MAX(scrollView.contentOffset.y * -1, 0);
 		offset = MIN(offset, 60);
-		scrollView.contentInset = UIEdgeInsetsMake(offset, 0.0f, 0.0f, 0.0f);
+        UIEdgeInsets oldInsets = [self oldContentInset];
+        oldInsets.top += offset;
+        scrollView.contentInset = oldInsets;
 		
 	} else if (scrollView.isDragging) {
 		
@@ -201,7 +215,8 @@
 		}
 		
 		if (scrollView.contentInset.top != 0) {
-			scrollView.contentInset = UIEdgeInsetsZero;
+			//scrollView.contentInset = UIEdgeInsetsZero;
+            scrollView.contentInset = [self oldContentInset];
 		}
 		
 	}
@@ -209,7 +224,7 @@
 }
 
 - (void)egoRefreshScrollViewDidEndDragging:(UIScrollView *)scrollView {
-	
+	[self storeOldContentInsetForScrollView:scrollView];
 	BOOL _loading = NO;
 	if ([_delegate respondsToSelector:@selector(egoRefreshTableHeaderDataSourceIsLoading:)]) {
 		_loading = [_delegate egoRefreshTableHeaderDataSourceIsLoading:self];
@@ -224,7 +239,9 @@
 		[self setState:EGOOPullRefreshLoading];
 		[UIView beginAnimations:nil context:NULL];
 		[UIView setAnimationDuration:0.2];
-		scrollView.contentInset = UIEdgeInsetsMake(60.0f, 0.0f, 0.0f, 0.0f);
+        UIEdgeInsets oldInsets = [self oldContentInset];
+        oldInsets.top += 60.0f;
+		scrollView.contentInset = oldInsets;
 		[UIView commitAnimations];
 		
 	}
@@ -232,10 +249,14 @@
 }
 
 - (void)egoRefreshScrollViewDataSourceDidFinishedLoading:(UIScrollView *)scrollView {	
-	
+	[self storeOldContentInsetForScrollView:scrollView];
 	[UIView beginAnimations:nil context:NULL];
 	[UIView setAnimationDuration:.3];
-	[scrollView setContentInset:UIEdgeInsetsMake(0.0f, 0.0f, 0.0f, 0.0f)];
+    
+    UIEdgeInsets oldInsets = [self oldContentInset];
+    [scrollView setContentInset:oldInsets];
+    
+//	[scrollView setContentInset:UIEdgeInsetsMake(0.0f, 0.0f, 0.0f, 0.0f)];
 	[UIView commitAnimations];
 	
 	[self setState:EGOOPullRefreshNormal];

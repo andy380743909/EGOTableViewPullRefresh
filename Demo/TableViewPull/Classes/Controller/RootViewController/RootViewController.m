@@ -73,7 +73,9 @@
     }
     
 	// Configure the cell.
-
+    cell.textLabel.text = @"GGGGGGGGGG";
+    
+    
     return cell;
 }
 

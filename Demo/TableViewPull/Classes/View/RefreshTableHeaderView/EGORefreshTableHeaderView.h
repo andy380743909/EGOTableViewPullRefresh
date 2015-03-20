@@ -46,7 +46,7 @@ typedef enum{
 	
 
 }
-
+@property (nonatomic, retain) NSValue *oldScrollViewContentInset;
 @property(nonatomic,assign) id <EGORefreshTableHeaderDelegate> delegate;
 
 - (void)refreshLastUpdatedDate;
